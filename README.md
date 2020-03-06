@@ -1,3 +1,3 @@
 # Simple (Shell/Script Web) Hook
 
-Keep simple
+Keep it simple
