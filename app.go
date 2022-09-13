@@ -14,11 +14,11 @@ func callShell(script string) (string, string) {
 	var out bytes.Buffer
 	cmd.Stdout = &out
 	err := cmd.Run()
+	outString := out.String()
 	if err != nil {
 		log.Println("has error: ", err)
-		return "", err.Error()
+		return outString, err.Error()
 	}
-	outString := out.String()
 	log.Println("call \"" + script + "\" success")
 	return outString, ""
 }
@@ -40,7 +40,7 @@ func handle(w http.ResponseWriter, req *http.Request) {
 	}
 	successOutput, errorOutput := callShell(scriptName)
 	if errorOutput != "" {
-		write(w, 500, errorOutput)
+		write(w, 500, successOutput + "\n" + errorOutput + "\n")
 		return
 	}
 	write(w, 200, successOutput)
