@@ -1,7 +1,6 @@
 package main
 
 import (
-	"bytes"
 	"log"
 	"net/http"
 	"os"
@@ -9,24 +8,15 @@ import (
 	"strings"
 )
 
-func callShell(script string) (string, string) {
+func callShell(script string, w http.ResponseWriter) {
 	cmd := exec.Command("./" + script)
-	var out bytes.Buffer
-	cmd.Stdout = &out
+	cmd.Stdout = w
+	w.WriteHeader(200)
 	err := cmd.Run()
-	outString := out.String()
 	if err != nil {
 		log.Println("Run cmd return error: ", err)
-		return outString, err.Error()
-	}
-	log.Println("Call \"" + script + "\" success")
-	return outString, ""
-}
-
-func write(w http.ResponseWriter, content string) {
-	_, err := w.Write([]byte(content))
-	if err != nil {
-		log.Println("Write response return error: ", err)
+	} else {
+		log.Println("Call \"" + script + "\" success")
 	}
 }
 
@@ -38,14 +28,7 @@ func handle(w http.ResponseWriter, req *http.Request) {
 		log.Println("Not found: " + scriptName)
 		return
 	}
-	successOutput, errorOutput := callShell(scriptName)
-	if errorOutput != "" {
-		w.WriteHeader(500)
-		write(w, successOutput+"\n\n"+errorOutput+"\n")
-		return
-	}
-	w.WriteHeader(200)
-	write(w, successOutput)
+	callShell(scriptName, w)
 }
 
 func main() {
