@@ -16,18 +16,17 @@ func callShell(script string) (string, string) {
 	err := cmd.Run()
 	outString := out.String()
 	if err != nil {
-		log.Println("has error: ", err)
+		log.Println("Run cmd return error: ", err)
 		return outString, err.Error()
 	}
-	log.Println("call \"" + script + "\" success")
+	log.Println("Call \"" + script + "\" success")
 	return outString, ""
 }
 
-func write(w http.ResponseWriter, code int, content string) {
-	w.WriteHeader(code)
+func write(w http.ResponseWriter, content string) {
 	_, err := w.Write([]byte(content))
 	if err != nil {
-		log.Println("has error: ", err)
+		log.Println("Write response return error: ", err)
 	}
 }
 
@@ -36,19 +35,28 @@ func handle(w http.ResponseWriter, req *http.Request) {
 	_, err := os.Stat(scriptName)
 	if os.IsNotExist(err) {
 		w.WriteHeader(404)
+		log.Println("Not found: " + scriptName)
 		return
 	}
 	successOutput, errorOutput := callShell(scriptName)
 	if errorOutput != "" {
-		write(w, 500, successOutput + "\n" + errorOutput + "\n")
+		w.WriteHeader(500)
+		write(w, successOutput+"\n\n"+errorOutput+"\n")
 		return
 	}
-	write(w, 200, successOutput)
+	w.WriteHeader(200)
+	write(w, successOutput)
 }
 
 func main() {
+	cwd, err := os.Getwd()
+	if err != nil {
+		log.Fatal("Can not get current work directory.")
+	}
+	log.Println("Search script file in \"" + cwd + "\"")
 	http.HandleFunc("/", handle)
-	err := http.ListenAndServe(":8090", nil)
+	log.Println("Listen for :8090")
+	err = http.ListenAndServe(":8090", nil)
 	if err != nil {
 		log.Fatal(err)
 	}
